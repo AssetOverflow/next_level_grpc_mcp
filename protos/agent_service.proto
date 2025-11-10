@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package neuralbus.v1;
+
+import "protos/common.proto";
+
+option csharp_namespace = "NeuralBus.V1";
+option java_multiple_files = true;
+option java_package = "ai.neuralbus.v1";
+
+message RegisterAgentRequest {
+  string agent_id = 1;
+  string agent_type = 2;
+  string capabilities_json = 3;
+  string version = 4;
+  map<string, string> labels = 5;
+}
+
+message RegisterAgentResponse {
+  ResponseMeta meta = 1;
+  bool accepted = 2;
+}
+
+message MutationRow {
+  map<string, string> values = 1;
+}
+
+enum MutationOp {
+  MUTATION_OP_UNSPECIFIED = 0;
+  UPSERT = 1;
+  DELETE = 2;
+}
+
+message AgentStateMutation {
+  string table_name = 1;
+  MutationOp operation = 2;
+  repeated MutationRow rows = 3;
+  string revision_token = 4; // for idempotency
+}
+
+message PushStateRequest {
+  string agent_id = 1;
+  repeated AgentStateMutation mutations = 2;
+}
+
+message PushStateResponse {
+  ResponseMeta meta = 1;
+  int64 applied_cycle = 2;
+}
+
+message HeartbeatRequest {
+  string agent_id = 1;
+  int64 ts = 2;
+}
+
+message HeartbeatResponse {
+  ResponseMeta meta = 1;
+  bool ok = 2;
+}
+
+service AgentService {
+  rpc RegisterAgent (RegisterAgentRequest) returns (RegisterAgentResponse);
+  rpc PushState (PushStateRequest) returns (PushStateResponse);
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+}

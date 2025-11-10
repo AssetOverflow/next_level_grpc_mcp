@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package neuralbus.v1;
+
+option csharp_namespace = "NeuralBus.V1";
+option java_multiple_files = true;
+option java_package = "ai.neuralbus.v1";
+
+// Standard status codes
+enum StatusCode {
+  STATUS_CODE_UNSPECIFIED = 0;
+  OK = 1;
+  INVALID_ARGUMENT = 2;
+  NOT_FOUND = 3;
+  ALREADY_EXISTS = 4;
+  PERMISSION_DENIED = 5;
+  UNAUTHENTICATED = 6;
+  RESOURCE_EXHAUSTED = 7;
+  FAILED_PRECONDITION = 8;
+  ABORTED = 9;
+  OUT_OF_RANGE = 10;
+  UNIMPLEMENTED = 11;
+  INTERNAL = 12;
+  UNAVAILABLE = 13;
+  DATA_LOSS = 14;
+  DEADLINE_EXCEEDED = 15;
+  SCHEMA_MISMATCH = 16;
+  SUBSCRIPTION_CONFLICT = 17;
+  CONFLICT = 18;
+  RATE_LIMITED = 19;
+  BACKPRESSURE = 20;
+}
+
+// Structured error with tracing and retry hints.
+message Error {
+  StatusCode code = 1;
+  string message = 2;
+  string correlation_id = 3;
+  repeated ErrorDetail details = 4;
+  int64 retry_after_ms = 5;
+  int64 throttle_ms = 6;
+  int64 quota_remaining = 7;
+  string lineage_token = 8;
+  string schema_version = 9;
+}
+
+message ErrorDetail {
+  string type = 1;        // e.g., "field_violations"
+  string json_payload = 2; // arbitrary JSON string
+}
+
+enum Compression {
+  COMPRESSION_UNSPECIFIED = 0;
+  NONE = 1;
+  ZSTD = 2;
+}
+
+message LineageToken {
+  string id = 1;
+  int64 cycle_id = 2;
+  string table_name = 3;
+}
+
+message ColumnSchema {
+  string name = 1;
+  string type = 2;
+  bool nullable = 3;
+  string doc = 4;
+  repeated string tags = 5;
+}
+
+message Schema {
+  string version = 1;
+  repeated ColumnSchema columns = 2;
+}
+
+message Ack {
+  int64 cycle_id = 1;
+  string revision_token = 2;
+  string message = 3;
+}
+
+// Vector representation for embeddings.
+message Vector {
+  oneof storage {
+    bytes packed_f32_le = 1;     // dim * 4 bytes, little-endian
+    repeated float f32 = 2;      // direct float array
+  }
+  int32 dim = 3;
+  string space = 4; // e.g., "text-embedding-3-large"
+}
+
+// Associates a row key with an embedding vector.
+message EmbeddingRow {
+  string row_key = 1;  // stable key in source table
+  Vector vector = 2;
+  map<string, string> metadata = 3; // tags, origin
+}
+
+// Batch of embeddings tied to a table.
+message EmbeddingBatch {
+  string table_name = 1;
+  repeated EmbeddingRow rows = 2;
+}
+
+// Standard response envelope with optional error.
+message ResponseMeta {
+  StatusCode code = 1;
+  string message = 2;
+  Error error = 3; // if non-OK
+  string correlation_id = 4;
+}

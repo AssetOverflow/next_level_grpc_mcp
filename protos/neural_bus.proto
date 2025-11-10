@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package neuralbus.v1;
+
+import "protos/common.proto";
+
+option csharp_namespace = "NeuralBus.V1";
+option java_multiple_files = true;
+option java_package = "ai.neuralbus.v1";
+
+message TableRef {
+  string name = 1;
+  repeated string columns = 2;
+  string filter_expr = 3;           // server-side filter DSL
+  repeated string tag_filters = 4;  // semantic tags to include
+}
+
+message SubscribeRequest {
+  string agent_id = 1;
+  repeated TableRef tables = 2;
+  bool include_lineage = 3;
+  bool include_embeddings = 4;
+  Compression compression = 5;
+  int32 max_batch_ms = 6;     // micro-batching hint
+  int32 max_rows_per_batch = 7;
+}
+
+message DeltaRow {
+  map<string, string> scalar_values = 1;
+  bytes arrow_record_batch = 2;
+}
+
+message DeltaEnvelope {
+  string table_name = 1;
+  string schema_version = 2;
+  int64 cycle_id = 3;
+  int64 watermark_ts = 4;
+  LineageToken lineage_token = 5;
+  repeated DeltaRow added = 6;
+  repeated string removed_keys = 7;
+  repeated DeltaRow modified = 8;
+  EmbeddingBatch embedding_sidecar = 9;
+  Compression compression = 10;
+}
+
+message SubscribeResponse {
+  ResponseMeta meta = 1;
+  DeltaEnvelope delta = 2;
+}
+
+message PublishMessageRequest {
+  string agent_id = 1;
+  string channel_id = 2;
+  string content_type = 3; // e.g., "application/json"
+  bytes payload = 4;
+  repeated string tags = 5;
+  Vector embedding = 6;
+}
+
+message PublishMessageResponse {
+  ResponseMeta meta = 1;
+  Ack ack = 2;
+  string msg_id = 3;
+}
+
+message ListTablesRequest {
+  string agent_id = 1;
+  string namespace_prefix = 2; // filter by namespace
+}
+
+message TableInfo {
+  string name = 1;
+  Schema schema = 2;
+  repeated string tags = 3;
+}
+
+message ListTablesResponse {
+  ResponseMeta meta = 1;
+  repeated TableInfo tables = 2;
+}
+
+message ReplayRequest {
+  string agent_id = 1;
+  string table_name = 2;
+  int64 from_cycle_id = 3;
+  int64 from_ts = 4;
+  int64 to_ts = 5;
+  bool include_embeddings = 6;
+  Compression compression = 7;
+}
+
+service NeuralBusService {
+  rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse);
+  rpc PublishMessage (PublishMessageRequest) returns (PublishMessageResponse);
+  rpc ListTables (ListTablesRequest) returns (ListTablesResponse);
+  rpc Replay (ReplayRequest) returns (stream SubscribeResponse);
+}

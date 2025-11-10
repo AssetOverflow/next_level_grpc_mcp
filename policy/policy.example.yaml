@@ -1,0 +1,50 @@
+version: 1
+principals:
+  - id: "agent:planner-alpha"
+    claims:
+      agent_id: "planner-alpha"
+      workspace_id: "ws-default"
+      capabilities: ["planning.propose", "planning.vote", "neuralbus.read:planning.graph_live"]
+rules:
+  - id: "r1"
+    effect: "allow"
+    principal_selector:
+      match:
+        agent_id: "planner-alpha"
+    resource:
+      type: "table"
+      name: "planning.graph_live"
+    actions: ["subscribe", "read"]
+    conditions:
+      row_filter:
+        workspace_id: "ws-default"
+
+  - id: "r2"
+    effect: "allow"
+    principal_selector:
+      match:
+        agent_id: "planner-alpha"
+    resource:
+      type: "tool"
+      name: "planning.propose"
+    actions: ["invoke"]
+
+  - id: "r3"
+    effect: "deny"
+    principal_selector:
+      match_all: true
+    resource:
+      type: "table"
+      name: "agents.state.*"
+    actions: ["write"]
+    conditions:
+      not_owns_agent_namespace: true
+
+quotas:
+  - principal: "agent:planner-alpha"
+    limits:
+      qps: 100
+      bytes_per_minute: 104857600
+backpressure:
+  default_throttle_ms: 250
+  max_queue_depth: 1000

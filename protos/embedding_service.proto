@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package neuralbus.v1;
+
+import "protos/common.proto";
+
+option csharp_namespace = "NeuralBus.V1";
+option java_multiple_files = true;
+option java_package = "ai.neuralbus.v1";
+
+message EnqueueEmbeddingRequest {
+  string agent_id = 1;
+  string table_name = 2;
+  repeated EmbeddingRow rows = 3;
+  string space = 4;
+}
+
+message EnqueueEmbeddingResponse {
+  ResponseMeta meta = 1;
+  Ack ack = 2;
+}
+
+message NearestNeighborsRequest {
+  string agent_id = 1;
+  string space = 2;
+  Vector query = 3;
+  int32 top_k = 4;
+  float threshold = 5;
+  repeated string origin_tables = 6;
+}
+
+message Neighbor {
+  string reference_id = 1;
+  float similarity = 2;
+  map<string,string> metadata = 3;
+}
+
+message NearestNeighborsResponse {
+  ResponseMeta meta = 1;
+  repeated Neighbor neighbors = 2;
+}
+
+message SubscribeNeighborsRequest {
+  string agent_id = 1;
+  string space = 2;
+  int32 top_k = 3;
+  float threshold = 4;
+  string dynamic_query_ref = 5; 
+}
+
+message SubscribeNeighborsResponse {
+  ResponseMeta meta = 1;
+  repeated Neighbor neighbors = 2;
+  LineageToken lineage_token = 3;
+}
+
+service EmbeddingService {
+  rpc EnqueueEmbedding (EnqueueEmbeddingRequest) returns (EnqueueEmbeddingResponse);
+  rpc NearestNeighbors (NearestNeighborsRequest) returns (NearestNeighborsResponse);
+  rpc SubscribeNeighbors (SubscribeNeighborsRequest) returns (stream SubscribeNeighborsResponse);
+}

@@ -1,0 +1,1 @@
+# Generated stubs will be placed under src/protos/ by `make proto`.

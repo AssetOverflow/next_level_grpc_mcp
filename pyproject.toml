@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "next_level_grpc_mcp"
+version = "0.1.0"
+description = "Neural-bus framework using Deephaven, gRPC, and delta propagation for agentic state sharing"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "AssetOverflow" }]
+dependencies = [
+  "grpcio>=1.62.0",
+  "grpcio-tools>=1.62.0",
+  "protobuf>=4.25.0",
+  "deephaven",
+  "pyarrow>=14.0.0",
+  "uvloop; platform_system != 'Windows'",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.10.0",
+  "ruff>=0.6.0",
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.23.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
