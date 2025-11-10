@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  gmcp-server:
+    build: .
+    ports:
+      - "50051:50051"
+    container_name: gmcp-server
+    restart: unless-stopped
+    networks:
+      - gmcp-network
+
+networks:
+  gmcp-network:
+    driver: bridge
