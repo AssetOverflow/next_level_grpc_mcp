@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package gmcp;
+
+// Core gMCP service with bidirectional streaming for ultra-low-latency agent coordination
+service AgentCoordination {
+  // Bidirectional streaming RPC for real-time agent communication
+  rpc StreamAgentMessages(stream AgentMessage) returns (stream AgentMessage);
+  
+  // Register a tool plugin dynamically
+  rpc RegisterTool(ToolRegistration) returns (RegistrationResponse);
+  
+  // Register a memory plugin dynamically
+  rpc RegisterMemory(MemoryRegistration) returns (RegistrationResponse);
+  
+  // Invoke a registered tool
+  rpc InvokeTool(ToolInvocation) returns (ToolResult);
+  
+  // Query memory
+  rpc QueryMemory(MemoryQuery) returns (MemoryResult);
+  
+  // Server streaming for event notifications
+  rpc SubscribeEvents(EventSubscription) returns (stream Event);
+}
+
+// Message types for bidirectional agent communication
+message AgentMessage {
+  string agent_id = 1;
+  int64 timestamp = 2;
+  MessageType type = 3;
+  
+  oneof payload {
+    ToolInvocation tool_invocation = 4;
+    ToolResult tool_result = 5;
+    MemoryQuery memory_query = 6;
+    MemoryResult memory_result = 7;
+    Event event = 8;
+    string text_message = 9;
+  }
+  
+  map<string, string> metadata = 10;
+}
+
+enum MessageType {
+  UNKNOWN = 0;
+  TOOL_INVOCATION = 1;
+  TOOL_RESULT = 2;
+  MEMORY_QUERY = 3;
+  MEMORY_RESULT = 4;
+  EVENT = 5;
+  TEXT = 6;
+}
+
+// Tool registration and invocation
+message ToolRegistration {
+  string tool_id = 1;
+  string name = 2;
+  string description = 3;
+  repeated ToolParameter parameters = 4;
+  string return_type = 5;
+}
+
+message ToolParameter {
+  string name = 1;
+  string type = 2;
+  bool required = 3;
+  string description = 4;
+  string default_value = 5;
+}
+
+message ToolInvocation {
+  string tool_id = 1;
+  map<string, string> arguments = 2;
+  string request_id = 3;
+}
+
+message ToolResult {
+  string request_id = 1;
+  bool success = 2;
+  string result = 3;
+  string error_message = 4;
+  int64 execution_time_ms = 5;
+}
+
+// Memory registration and querying
+message MemoryRegistration {
+  string memory_id = 1;
+  string name = 2;
+  string description = 3;
+  MemoryType type = 4;
+}
+
+enum MemoryType {
+  VECTOR_STORE = 0;
+  KEY_VALUE = 1;
+  GRAPH = 2;
+  TEMPORAL = 3;
+}
+
+message MemoryQuery {
+  string memory_id = 1;
+  QueryType query_type = 2;
+  string query = 3;
+  int32 limit = 4;
+  map<string, string> filters = 5;
+}
+
+enum QueryType {
+  SEARCH = 0;
+  GET = 1;
+  LIST = 2;
+  RANGE = 3;
+}
+
+message MemoryResult {
+  repeated MemoryEntry entries = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+}
+
+message MemoryEntry {
+  string key = 1;
+  string value = 2;
+  int64 timestamp = 3;
+  map<string, string> metadata = 4;
+}
+
+// Event subscription and streaming
+message EventSubscription {
+  string agent_id = 1;
+  repeated string event_types = 2;
+  map<string, string> filters = 3;
+}
+
+message Event {
+  string event_id = 1;
+  string event_type = 2;
+  string source_agent_id = 3;
+  int64 timestamp = 4;
+  string payload = 5;
+  map<string, string> metadata = 6;
+}
+
+// Registration responses
+message RegistrationResponse {
+  bool success = 1;
+  string message = 2;
+  string registration_id = 3;
+}
